@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinni's Memory Match</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen">
+            <h1>Chinni's Memory Match!</h1>
+            <button id="start-button">Start Game</button>
+        </div>
+        <div id="game-screen" class="hidden">
+            <div class="header">
+                <div class="score">Score: <span id="score-value">0</span></div>
+                <button id="restart-button">Restart</button>
+                <button id="sound-toggle">🔊</button>
+            </div>
+            <div id="game-board"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

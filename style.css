@@ -1,0 +1,137 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    color: #333;
+    overflow: hidden; /* Prevent scrolling on mobile */
+}
+
+#game-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 90%;
+    width: 600px; /* Max width for larger screens */
+}
+
+#start-screen h1 {
+    color: #007bff;
+    margin-bottom: 20px;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    margin: 5px;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.score {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4x4 grid for 8 pairs = 16 cards */
+    gap: 10px;
+    perspective: 1000px; /* For 3D flip effect */
+    margin: 0 auto;
+    max-width: 440px; /* Adjust based on card size and gap */
+}
+
+.card {
+    width: 100px;
+    height: 100px;
+    background-color: #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    font-size: 2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card.flipped {
+    transform: rotateY(180deg);
+}
+
+.card .front,
+.card .back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+}
+
+.card .front {
+    background-color: #007bff; /* Back of the card */
+    color: white;
+    transform: rotateY(0deg);
+}
+
+.card .back {
+    background-color: #e9ecef; /* Front of the card, showing content */
+    color: #333;
+    transform: rotateY(180deg);
+}
+
+.card.matched .front, .card.matched .back {
+    background-color: #28a745; /* Matched cards green */
+    color: white;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    #game-board {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        gap: 8px;
+        max-width: 320px;
+    }
+    .card {
+        width: 70px;
+        height: 70px;
+        font-size: 1.5em;
+    }
+    .header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .score {
+        order: -1; /* Move score to top */
+    }
+}
