@@ -14,11 +14,19 @@
         </div>
         <div id="game-screen" class="hidden">
             <div class="header">
-                <div class="score">Score: <span id="score-value">0</span></div>
-                <button id="restart-button">Restart</button>
-                <button id="sound-toggle">🔊</button>
+                <div class="status-bar">
+                    <div class="level">Level: <span id="level-value">1</span></div>
+                    <div class="score">Score: <span id="score-value">0</span></div>
+                </div>
+                <div class="controls">
+                    <button id="restart-button">Restart</button>
+                    <button id="sound-toggle">🔊</button>
+                </div>
             </div>
             <div id="game-board"></div>
+            <div id="celebration-display" class="hidden"></div>
+            <div id="level-complete-message" class="hidden"></div>
+            <button id="next-level-button" class="hidden">Next Level</button>
         </div>
     </div>
     <script src="script.js"></script>

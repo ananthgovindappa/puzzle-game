@@ -7,7 +7,9 @@ body {
     margin: 0;
     background-color: #f0f0f0;
     color: #333;
-    overflow: hidden; /* Prevent scrolling on mobile */
+    overflow-y: auto; /* Allow scrolling for taller grids */
+    padding: 20px 0; /* Add some vertical padding */
+    box-sizing: border-box;
 }
 
 #game-container {
@@ -17,7 +19,8 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
     max-width: 90%;
-    width: 600px; /* Max width for larger screens */
+    width: 650px; /* Increased max-width for wider grids */
+    box-sizing: border-box;
 }
 
 #start-screen h1 {
@@ -43,28 +46,42 @@ button:hover {
 
 .header {
     display: flex;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    gap: 10px; /* Space between elements */
 }
 
-.score {
+.status-bar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.score, .level {
     font-size: 1.2em;
     font-weight: bold;
 }
 
+.controls {
+    display: flex;
+    gap: 10px;
+}
+
 #game-board {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4x4 grid for 8 pairs = 16 cards */
+    /* grid-template-columns will be set by JavaScript */
     gap: 10px;
     perspective: 1000px; /* For 3D flip effect */
-    margin: 0 auto;
-    max-width: 440px; /* Adjust based on card size and gap */
+    margin: 20px auto;
+    max-width: 550px; /* Max width for wider grids */
 }
 
 .card {
-    width: 100px;
-    height: 100px;
+    width: 100%; /* Make card width fill grid cell */
+    padding-bottom: 100%; /* Maintain aspect ratio */
+    height: 0; /* Reset height */
     background-color: #ddd;
     border-radius: 8px;
     cursor: pointer;
@@ -85,6 +102,7 @@ button:hover {
 .card .front,
 .card .back {
     position: absolute;
+    top: 0; left: 0;
     width: 100%;
     height: 100%;
     backface-visibility: hidden;
@@ -115,23 +133,60 @@ button:hover {
     display: none;
 }
 
+#level-complete-message {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #007bff;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+#celebration-display {
+    font-size: 3em;
+    margin-top: 20px;
+    animation: pulse 1.5s infinite alternate;
+}
+
+@keyframes pulse {
+    from { transform: scale(1); opacity: 1; }
+    to { transform: scale(1.1); opacity: 0.8; }
+}
+
 /* Mobile responsiveness */
 @media (max-width: 600px) {
+    #game-container {
+        padding: 15px;
+        width: 100%; /* Full width on mobile */
+        max-width: none; /* Remove max-width constraint */
+        border-radius: 0;
+        box-shadow: none;
+    }
     #game-board {
-        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
-        gap: 8px;
-        max-width: 320px;
+        gap: 5px;
+        max-width: 100%;
     }
     .card {
-        width: 70px;
-        height: 70px;
-        font-size: 1.5em;
+        font-size: 1.2em;
     }
     .header {
         flex-direction: column;
-        gap: 10px;
+        align-items: stretch;
     }
-    .score {
-        order: -1; /* Move score to top */
+    .status-bar, .controls {
+        width: 100%;
+        justify-content: space-around;
+    }
+    .score, .level {
+        font-size: 1em;
+    }
+    button {
+        padding: 8px 15px;
+        font-size: 0.9em;
+    }
+    #level-complete-message {
+        font-size: 1.2em;
+    }
+    #celebration-display {
+        font-size: 2.5em;
     }
 }
