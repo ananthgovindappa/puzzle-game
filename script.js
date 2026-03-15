@@ -20,8 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let soundEnabled = true;
     let currentLevelIndex = 0;
 
-    let audioContext = null; // Global AudioContext
-    let audioBufferCache = {}; // Cache for decoded audio buffers
+    let audioContext = null;
+    let audioBufferCache = {};
     let unlockedAudio = false;
 
     // Base64 encoded WAV audio samples
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Initialize AudioContext and load sounds
-    function initAudio() {
+    function initAudioContext() { // Renamed from initAudio
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             // Decode all audio samples once
@@ -68,14 +68,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const allEmojis = ['🍎', '🍌', '🍒', '🍇', '🍋', '🍊', '🍓', '🥝', '🍉', '🍍', '🍑', '🌶️', '🍆', '🥦', '🥕', '🥔'];
+    const allEmojis = ['🍎', '🍌', '🍒', '🍇', '🍋', '🍊', '🍓', '🥝', '🍉', '🍍', '🍑', '🌶️', '🍆', '🥦', '🥕', '🥔', '🥐', '🍔', '🍕', '🌮', '🍦', '🍩', '🍪', '🍫']; // Added more emojis for 10 levels
 
     const levels = [
         { pairs: 2, cols: 2, rows: 2, scoreThresholds: [200, 150, 100] }, // 4 cards, 2 pairs
         { pairs: 4, cols: 4, rows: 2, scoreThresholds: [400, 300, 200] }, // 8 cards, 4 pairs
         { pairs: 6, cols: 4, rows: 3, scoreThresholds: [600, 450, 300] }, // 12 cards, 6 pairs
         { pairs: 8, cols: 4, rows: 4, scoreThresholds: [800, 600, 400] }, // 16 cards, 8 pairs
-        { pairs: 10, cols: 5, rows: 4, scoreThresholds: [1000, 750, 500] } // 20 cards, 10 pairs
+        { pairs: 10, cols: 5, rows: 4, scoreThresholds: [1000, 750, 500] }, // 20 cards, 10 pairs
+        { pairs: 12, cols: 6, rows: 4, scoreThresholds: [1200, 900, 600] }, // 24 cards, 12 pairs
+        { pairs: 14, cols: 7, rows: 4, scoreThresholds: [1400, 1050, 700] }, // 28 cards, 14 pairs
+        { pairs: 16, cols: 8, rows: 4, scoreThresholds: [1600, 1200, 800] }, // 32 cards, 16 pairs
+        { pairs: 18, cols: 6, rows: 6, scoreThresholds: [1800, 1350, 900] }, // 36 cards, 18 pairs
+        { pairs: 20, cols: 8, rows: 5, scoreThresholds: [2000, 1500, 1000] }  // 40 cards, 20 pairs
     ];
 
     function initializeGame(level = 0) {
@@ -137,11 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
         source.buffer = audioBufferCache[key];
         source.connect(audioContext.destination);
         source.start(0);
-        source.onended = () => source.disconnect(); // Clean up
+        source.onended = () => source.disconnect();
     }
 
     function flipCard() {
-        unlockAudioContext(); // Attempt to unlock on any interaction
+        unlockAudioContext();
 
         if (lockBoard) return;
         if (this === firstCard) return;
@@ -258,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showGameScreen() {
-        unlockAudioContext(); // Attempt to unlock audio on game start
+        unlockAudioContext();
         startScreen.classList.add('hidden');
         gameScreen.classList.remove('hidden');
         initializeGame(0);
@@ -278,10 +283,11 @@ document.addEventListener('DOMContentLoaded', () => {
     soundToggle.addEventListener('click', () => {
         soundEnabled = !soundEnabled;
         soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
-        unlockAudioContext(); // Attempt to unlock audio if toggled on
+        // No need to unlock here, as it's handled by other interactions
+        // and AudioContext state change (suspended/running) is handled by unlockAudioContext()
     });
 
     // Initial setup
-    initAudio(); // Initialize audio context and load sounds on page load
+    initAudioContext(); // Initialize audio context and load sounds on page load
     showStartScreen();
 });

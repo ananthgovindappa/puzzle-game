@@ -19,7 +19,7 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
     max-width: 90%;
-    width: 650px; /* Increased max-width for wider grids */
+    width: 800px; /* Increased max-width for wider grids */
     box-sizing: border-box;
 }
 
@@ -75,7 +75,7 @@ button:hover {
     gap: 10px;
     perspective: 1000px; /* For 3D flip effect */
     margin: 20px auto;
-    max-width: 550px; /* Max width for wider grids */
+    max-width: 750px; /* Max width for wider grids */
 }
 
 .card {
@@ -88,7 +88,7 @@ button:hover {
     position: relative;
     transform-style: preserve-3d;
     transition: transform 0.6s;
-    font-size: 2em;
+    /* font-size: 2em; */ /* Removed from here, moved to .card .back for more control*/
     display: flex;
     justify-content: center;
     align-items: center;
@@ -122,6 +122,7 @@ button:hover {
     background-color: #e9ecef; /* Front of the card, showing content */
     color: #333;
     transform: rotateY(180deg);
+    font-size: 3em; /* Increased emoji size */
 }
 
 .card.matched .front, .card.matched .back {
@@ -153,7 +154,7 @@ button:hover {
 }
 
 /* Mobile responsiveness */
-@media (max-width: 600px) {
+@media (max-width: 800px) { /* Adjusted breakpoint for wider grids */
     #game-container {
         padding: 15px;
         width: 100%; /* Full width on mobile */
@@ -166,7 +167,7 @@ button:hover {
         max-width: 100%;
     }
     .card {
-        font-size: 1.2em;
+        font-size: 1.2em; /* Keep smaller on mobile */
     }
     .header {
         flex-direction: column;
