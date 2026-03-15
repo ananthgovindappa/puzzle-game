@@ -19,12 +19,54 @@ document.addEventListener('DOMContentLoaded', () => {
     let matches = 0;
     let soundEnabled = true;
     let currentLevelIndex = 0;
-    let unlockedAudio = false; // New flag for audio context
 
-    // Sound effects - using slightly more complex base64 for better compatibility
-    const flipSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAD/DgA='); // Short click
-    const matchSound = new Audio('data:audio/wav;base64,UklGRlhoBQAAAEhXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAGQAAAAAAAAA'); // Short beep
-    const celebrationSound = new Audio('data:audio/wav;base64,UklGRoAAAABXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAEQAAABkAAAAAAAAAAABAAAAAAAAAAD/DgA='); // A little chime
+    let audioContext = null; // Global AudioContext
+    let audioBufferCache = {}; // Cache for decoded audio buffers
+    let unlockedAudio = false;
+
+    // Base64 encoded WAV audio samples
+    const audioSamples = {
+        flip: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAD/DgA=',
+        match: 'data:audio/wav;base64,UklGRlhoBQAAAEhXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAGQAAAAAAAAA',
+        celebrate: 'data:audio/wav;base64,UklGRoAAAABXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAEQAAABkAAAAAAAAAAABAAAAAAAAAAD/DgA=',
+        silent: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAAA=' // 1-second silent WAV
+    };
+
+    // Initialize AudioContext and load sounds
+    function initAudio() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Decode all audio samples once
+            for (const key in audioSamples) {
+                if (audioSamples.hasOwnProperty(key)) {
+                    fetch(audioSamples[key])
+                        .then(response => response.arrayBuffer())
+                        .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+                        .then(audioBuffer => {
+                            audioBufferCache[key] = audioBuffer;
+                        })
+                        .catch(e => console.error(`Error decoding audio ${key}:`, e));
+                }
+            }
+        }
+    }
+
+    // Function to ensure AudioContext is resumed by a user gesture
+    function unlockAudioContext() {
+        if (unlockedAudio) return;
+        initAudioContext(); // Ensure context is initialized
+
+        if (audioContext.state === 'suspended') {
+            audioContext.resume().then(() => {
+                unlockedAudio = true;
+                console.log("AudioContext resumed successfully!");
+            }).catch(error => {
+                console.error("Failed to resume AudioContext:", error);
+            });
+        } else {
+            unlockedAudio = true; // Already running or not suspended
+        }
+    }
 
     const allEmojis = ['🍎', '🍌', '🍒', '🍇', '🍋', '🍊', '🍓', '🥝', '🍉', '🍍', '🍑', '🌶️', '🍆', '🥦', '🥕', '🥔'];
 
@@ -35,20 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
         { pairs: 8, cols: 4, rows: 4, scoreThresholds: [800, 600, 400] }, // 16 cards, 8 pairs
         { pairs: 10, cols: 5, rows: 4, scoreThresholds: [1000, 750, 500] } // 20 cards, 10 pairs
     ];
-
-    // Function to ensure audio context is unlocked by a user gesture
-    function ensureAudioUnlocked() {
-        if (unlockedAudio) return;
-        // Attempt to play a silent sound to unlock the audio context
-        const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAAA=');
-        silentAudio.volume = 0;
-        silentAudio.play().then(() => {
-            unlockedAudio = true;
-            console.log("Audio context unlocked!");
-        }).catch(error => {
-            console.error("Failed to unlock audio context:", error);
-        });
-    }
 
     function initializeGame(level = 0) {
         currentLevelIndex = level;
@@ -102,21 +130,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function playSound(audioElement) {
-        if (!soundEnabled || !unlockedAudio) return; // Only play if enabled AND unlocked
-        audioElement.currentTime = 0; // Reset sound to play from start
-        audioElement.play().catch(error => {
-            console.error("Audio playback failed:", error);
-        });
+    function playCachedSound(key) {
+        if (!soundEnabled || !unlockedAudio || !audioBufferCache[key]) return;
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBufferCache[key];
+        source.connect(audioContext.destination);
+        source.start(0);
+        source.onended = () => source.disconnect(); // Clean up
     }
 
     function flipCard() {
-        ensureAudioUnlocked(); // Attempt to unlock audio on card flip
+        unlockAudioContext(); // Attempt to unlock on any interaction
 
         if (lockBoard) return;
         if (this === firstCard) return;
 
-        playSound(flipSound);
+        playCachedSound('flip');
 
         this.classList.add('flipped');
 
@@ -134,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isMatch) {
             disableCards();
-            playSound(matchSound);
+            playCachedSound('match');
         } else {
             unflipCards();
         }
@@ -197,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stars = 1;
         }
 
-        playSound(celebrationSound);
+        playCachedSound('celebrate');
 
         levelCompleteMessage.innerHTML = `Level ${currentLevelIndex + 1} Complete! Score: ${score} <br> Stars: ${'⭐'.repeat(stars)}`;
         levelCompleteMessage.classList.remove('hidden');
@@ -228,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showGameScreen() {
-        ensureAudioUnlocked(); // Attempt to unlock audio on game start
+        unlockAudioContext(); // Attempt to unlock audio on game start
         startScreen.classList.add('hidden');
         gameScreen.classList.remove('hidden');
         initializeGame(0);
@@ -248,9 +278,10 @@ document.addEventListener('DOMContentLoaded', () => {
     soundToggle.addEventListener('click', () => {
         soundEnabled = !soundEnabled;
         soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
-        ensureAudioUnlocked(); // Attempt to unlock audio if toggled on
+        unlockAudioContext(); // Attempt to unlock audio if toggled on
     });
 
     // Initial setup
+    initAudio(); // Initialize audio context and load sounds on page load
     showStartScreen();
 });
