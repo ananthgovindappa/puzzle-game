@@ -6,10 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const soundToggle = document.getElementById('sound-toggle');
     const gameBoard = document.getElementById('game-board');
     const scoreValue = document.getElementById('score-value');
-    const levelValue = document.getElementById('level-value'); // New: to display current level
-    const celebrationDisplay = document.getElementById('celebration-display'); // New: for stars/fireworks
-    const levelCompleteMessage = document.getElementById('level-complete-message'); // New
-    const nextLevelButton = document.getElementById('next-level-button'); // New
+    const levelValue = document.getElementById('level-value');
+    const celebrationDisplay = document.getElementById('celebration-display');
+    const levelCompleteMessage = document.getElementById('level-complete-message');
+    const nextLevelButton = document.getElementById('next-level-button');
 
     let cards = [];
     let firstCard = null;
@@ -18,27 +18,41 @@ document.addEventListener('DOMContentLoaded', () => {
     let score = 0;
     let matches = 0;
     let soundEnabled = true;
-    let currentLevelIndex = 0; // Start at level 0
+    let currentLevelIndex = 0;
+    let unlockedAudio = false; // New flag for audio context
 
     // Sound effects - using slightly more complex base64 for better compatibility
     const flipSound = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAD/DgA='); // Short click
-    const matchSound = new Audio('data:audio/wav;base64,UklGRlhoBQAAAEhXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAGQAAAAAAAAA'); // Short beep (kept previous, assuming it was the alert sound)
+    const matchSound = new Audio('data:audio/wav;base64,UklGRlhoBQAAAEhXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAGQAAAAAAAAA'); // Short beep
     const celebrationSound = new Audio('data:audio/wav;base64,UklGRoAAAABXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAEQAAABkAAAAAAAAAAABAAAAAAAAAAD/DgA='); // A little chime
 
     const allEmojis = ['🍎', '🍌', '🍒', '🍇', '🍋', '🍊', '🍓', '🥝', '🍉', '🍍', '🍑', '🌶️', '🍆', '🥦', '🥕', '🥔'];
 
     const levels = [
-        { pairs: 2, cols: 2, rows: 2, timeLimit: 0, scoreThresholds: [200, 150, 100] }, // 4 cards, 2 pairs
-        { pairs: 4, cols: 4, rows: 2, timeLimit: 0, scoreThresholds: [400, 300, 200] }, // 8 cards, 4 pairs
-        { pairs: 6, cols: 4, rows: 3, timeLimit: 0, scoreThresholds: [600, 450, 300] }, // 12 cards, 6 pairs
-        { pairs: 8, cols: 4, rows: 4, timeLimit: 0, scoreThresholds: [800, 600, 400] }, // 16 cards, 8 pairs
-        { pairs: 10, cols: 5, rows: 4, timeLimit: 0, scoreThresholds: [1000, 750, 500] } // 20 cards, 10 pairs
+        { pairs: 2, cols: 2, rows: 2, scoreThresholds: [200, 150, 100] }, // 4 cards, 2 pairs
+        { pairs: 4, cols: 4, rows: 2, scoreThresholds: [400, 300, 200] }, // 8 cards, 4 pairs
+        { pairs: 6, cols: 4, rows: 3, scoreThresholds: [600, 450, 300] }, // 12 cards, 6 pairs
+        { pairs: 8, cols: 4, rows: 4, scoreThresholds: [800, 600, 400] }, // 16 cards, 8 pairs
+        { pairs: 10, cols: 5, rows: 4, scoreThresholds: [1000, 750, 500] } // 20 cards, 10 pairs
     ];
+
+    // Function to ensure audio context is unlocked by a user gesture
+    function ensureAudioUnlocked() {
+        if (unlockedAudio) return;
+        // Attempt to play a silent sound to unlock the audio context
+        const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAJgBAABlYWxpbmZvcm1hdAIAAAAAEAAwAAACZGF0YQAAAAAAAAAAAAA=');
+        silentAudio.volume = 0;
+        silentAudio.play().then(() => {
+            unlockedAudio = true;
+            console.log("Audio context unlocked!");
+        }).catch(error => {
+            console.error("Failed to unlock audio context:", error);
+        });
+    }
 
     function initializeGame(level = 0) {
         currentLevelIndex = level;
         if (currentLevelIndex >= levels.length) {
-            // Game completed!
             displayOverallGameEnd();
             return;
         }
@@ -53,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gameBoard.innerHTML = '';
         gameBoard.style.gridTemplateColumns = `repeat(${currentLevel.cols}, 1fr)`;
 
-        cards = shuffle([...selectedEmojis, ...selectedEmojis]); // Duplicate for pairs
+        cards = shuffle([...selectedEmojis, ...selectedEmojis]);
         renderCards();
         lockBoard = false;
         firstCard = null;
@@ -77,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const cardElement = document.createElement('div');
             cardElement.classList.add('card');
             cardElement.dataset.emoji = emoji;
-            cardElement.dataset.index = index; // Unique index for each card
+            cardElement.dataset.index = index;
 
             cardElement.innerHTML = `
                 <div class="front">?</div>
@@ -88,11 +102,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function flipCard() {
-        if (lockBoard) return;
-        if (this === firstCard) return; // Prevent double clicking the same card
+    function playSound(audioElement) {
+        if (!soundEnabled || !unlockedAudio) return; // Only play if enabled AND unlocked
+        audioElement.currentTime = 0; // Reset sound to play from start
+        audioElement.play().catch(error => {
+            console.error("Audio playback failed:", error);
+        });
+    }
 
-        if (soundEnabled) flipSound.play();
+    function flipCard() {
+        ensureAudioUnlocked(); // Attempt to unlock audio on card flip
+
+        if (lockBoard) return;
+        if (this === firstCard) return;
+
+        playSound(flipSound);
 
         this.classList.add('flipped');
 
@@ -110,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isMatch) {
             disableCards();
-            if (soundEnabled) matchSound.play();
+            playSound(matchSound);
         } else {
             unflipCards();
         }
@@ -147,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isMatch) {
             score += 100;
         } else {
-            score = Math.max(0, score - 20); // Deduct for incorrect match
+            score = Math.max(0, score - 20);
         }
         scoreValue.textContent = score;
     }
@@ -173,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stars = 1;
         }
 
-        if (soundEnabled) celebrationSound.play();
+        playSound(celebrationSound);
 
         levelCompleteMessage.innerHTML = `Level ${currentLevelIndex + 1} Complete! Score: ${score} <br> Stars: ${'⭐'.repeat(stars)}`;
         levelCompleteMessage.classList.remove('hidden');
@@ -181,24 +205,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentLevelIndex < levels.length - 1) {
             nextLevelButton.classList.remove('hidden');
         } else {
-            // Last level completed
             displayOverallGameEnd();
         }
         showCelebration();
     }
 
     function displayOverallGameEnd() {
-        levelCompleteMessage.innerHTML = `Congratulations, Mr.! You completed all levels! Final Score: ${score}`; // No stars for overall end
+        levelCompleteMessage.innerHTML = `Congratulations, Mr.! You completed all levels! Final Score: ${score}`; 
         levelCompleteMessage.classList.remove('hidden');
-        nextLevelButton.classList.add('hidden'); // No next level
+        nextLevelButton.classList.add('hidden');
         showCelebration();
     }
 
     function showCelebration() {
         celebrationDisplay.classList.remove('hidden');
-        // Simple text-based fireworks animation
         celebrationDisplay.innerHTML = '🎉🎇🎆';
-        // Trigger CSS animation for fireworks (if implemented in CSS)
     }
 
     function hideCelebration() {
@@ -207,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showGameScreen() {
+        ensureAudioUnlocked(); // Attempt to unlock audio on game start
         startScreen.classList.add('hidden');
         gameScreen.classList.remove('hidden');
         initializeGame(0);
@@ -215,17 +237,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function showStartScreen() {
         startScreen.classList.remove('hidden');
         gameScreen.classList.add('hidden');
-        hideCelebration(); // Ensure celebration is hidden when going to start screen
+        hideCelebration();
     }
 
     // Event Listeners
     startButton.addEventListener('click', showGameScreen);
-    restartButton.addEventListener('click', () => initializeGame(currentLevelIndex)); // Restart current level
-    nextLevelButton.addEventListener('click', () => initializeGame(currentLevelIndex + 1)); // Go to next level
+    restartButton.addEventListener('click', () => initializeGame(currentLevelIndex));
+    nextLevelButton.addEventListener('click', () => initializeGame(currentLevelIndex + 1));
 
     soundToggle.addEventListener('click', () => {
         soundEnabled = !soundEnabled;
         soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+        ensureAudioUnlocked(); // Attempt to unlock audio if toggled on
     });
 
     // Initial setup
